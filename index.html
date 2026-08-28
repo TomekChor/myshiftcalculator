@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Hours & Shift Calculator | MyShiftCalculator</title>
+    <meta name="description" content="Calculate your weekly work shifts, deductions, overtime pay, and future income projections. Free timesheet calculator optimized for US hourly laws.">
+    <style>
+        :root {
+            --primary: #2563eb; --primary-hover: #1d4ed8; --bg: #f8fafc; --card: #ffffff;
+            --text: #1e293b; --text-light: #64748b; --border: #e2e8f0; --success: #16a34a; --danger: #dc2626;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 20px; }
+        .container { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
+        @media (max-width: 900px) { .container { grid-template-columns: 1fr; } .ad-sidebar { display: none; } }
+        header { grid-column: 1 / -1; text-align: center; padding: 15px 0; }
+        header h1 { color: var(--primary); font-size: 2.2rem; margin-bottom: 5px; }
+        .main-card { background: var(--card); border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid var(--border); }
+        .settings-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; background: #f1f5f9; padding: 15px; border-radius: 8px; }
+        .form-group { display: flex; flex-direction: column; }
+        label { margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; }
+        input, select { padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; background: white; }
+        
+        .shifts-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .day-row { display: grid; grid-template-columns: 150px 1fr 1fr 100px 50px; gap: 10px; align-items: center; padding: 12px; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+        @media (max-width: 650px) { 
+            .day-row { grid-template-columns: 1fr 1fr; } .day-select-wrapper { grid-column: 1 / -1; } .btn-remove { grid-column: 1 / -1; text-align: right; width: 100%; }
+        }
+        
+        .btn-add { background: #f1f5f9; color: var(--primary); border: 2px dashed var(--primary); padding: 12px; font-weight: 600; border-radius: 8px; cursor: pointer; text-align: center; margin-bottom: 25px; width: 100%; }
+        .btn-remove { background: none; border: none; color: var(--danger); font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        .btn-calc { width: 100%; background-color: var(--primary); color: white; border: none; padding: 14px; font-size: 1.1rem; font-weight: 600; border-radius: 8px; cursor: pointer; }
+        
+        .results-grid { margin-top: 30px; display: none; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 600px) { .results-grid { grid-template-columns: 1fr; } }
+        .res-block { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 15px; }
+        .res-block h3 { color: var(--primary); margin-bottom: 10px; font-size: 1.1rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        .res-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #cbd5e1; font-size: 0.95rem; }
+        
+        .ad-space { background: #e2e8f0; border: 2px dashed #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; }
+        .ad-top { grid-column: 1 / -1; height: 90px; margin-bottom: 10px; }
+        .ad-sidebar { height: 600px; position: sticky; top: 20px; }
+        .ad-bottom { margin-top: 25px; height: 100px; }
+        
+        footer { grid-column: 1 / -1; text-align: center; padding: 30px 0; color: var(--text-light); font-size: 0.9rem; }
+        footer a { color: var(--primary); text-decoration: none; margin: 0 10px; font-weight: 600; cursor: pointer; }
+        
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; max-width: 600px; width: 100%; position: relative; }
+        .close-modal { position: absolute; top: 15px; right: 20px; font-size: 1.4rem; font-weight: bold; cursor: pointer; border: none; background: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="ad-space ad-top">Advertisement Space (Top 728x90)</div>
+        <header>
+            <h1>My Shift Calculator</h1>
+            <p>Flexible weekly timesheet, overtime, and gross income projections.</p>
+        </header>
+
+        <main class="main-card">
+            <form id="calcForm">
+                <div class="settings-row">
+                    <div class="form-group">
+                        <label for="hourlyRate">Base Hourly Rate ($)</label>
+                        <input type="number" id="hourlyRate" min="0" step="0.01" value="25.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="otThreshold">Overtime Threshold (Hours/Week)</label>
+                        <input type="number" id="otThreshold" min="0" value="40">
+                    </div>
+                </div>
+                <div id="shiftsContainer" class="shifts-container"></div>
+                <div id="addShiftBtn" class="btn-add">+ Add Shift</div>
+                <button type="submit" class="btn-calc">Calculate Weekly Earnings</button>
+            </form>
+
+            <div id="resultsGrid" class="results-grid">
+                <div class="res-block">
+                    <h3>Hours & Pay Breakdown</h3>
+                    <div class="res-row"><span>Regular Hours:</span><span id="regHours">0.0 hrs</span></div>
+                    <div class="res-row"><span>Overtime Hours (1.5x):</span><span id="otHours">0.0 hrs</span></div>
+                    <div class="res-row"><span>Total Net Hours:</span><span id="totalNetHours">0.0 hrs</span></div>
+                    <div class="res-row"><span>Total Unpaid Breaks:</span><span id="totalBreaks">0 mins</span></div>
+                    <div class="res-row" style="font-weight:bold; color:var(--success);"><span>Gross Weekly Pay:</span><span id="weeklyPay">$0.00</span></div>
+                </div>
+                <div class="res-block">
+                    <h3>Income Projections (Before Tax)</h3>
+                    <div class="res-row"><span>Weekly Income:</span><span id="projWeek">$0.00</span></div>
+                    <div class="res-row"><span>Bi-Weekly Income:</span><span id="projBiWeek">$0.00</span></div>
+                    <div class="res-row"><span>Monthly Estimate:</span><span id="projMonth">$0.00</span></div>
+                    <div class="res-row" style="font-weight:bold; color:var(--primary);"><span>Annual Estimate:</span><span id="projYear">$0.00</span></div>
+                </div>
+            </div>
+            <div class="ad-space ad-bottom">Advertisement Space (Below Results)</div>
+        </main>
+        <aside class="ad-space ad-sidebar">Advertisement Space (Sidebar 300x600)</aside>
+
+        <footer>
+            <p>&copy; 2026 MyShiftCalculator.com. All rights reserved.</p>
+            <p style="margin-top: 10px;"><a id="openPrivacy">Privacy Policy</a> | <a id="openTerms">Terms of Service</a></p>
+        </footer>
+    </div>
+
+    <div id="privacyModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModals()">✕</button>
+            <h2>Privacy Policy</h2>
+            <p>Calculations are processed locally by your browser. We do not store or collect your work hours.</p>
+            <p>We use Google AdSense to serve ads. Google uses cookies to display relevant ads based on user visits.</p>
+        </div>
+    </div>
+
+    <div id="termsModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModals()">✕</button>
+            <h2>Terms of Service</h2>
+            <p>This free tool provides estimations. We do not guarantee payroll or financial precision.</p>
+            <p>We are not responsible for any payroll disputes resulting from the use of this calculator.</p>
+        </div>
+    </div>
+
+    <!-- POŁĄCZENIE Z ZEWNĘTRZNYM PLIKIEM LOGIKI -->
+    <script src="script.js"></script>
+</body>
+</html>
