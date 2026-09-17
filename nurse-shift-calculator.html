@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>12 Hour Shift Calculator for Nurses | MyShiftCalculator</title>
+    <meta name="description" content="Free 12-hour shift calculator for nurses. Estimate weekly pay for 3x12 or 4x12 schedules, overtime, and night shift differential.">
+    <style>
+        :root {
+            --primary: #2563eb; --primary-hover: #1d4ed8; --bg: #f8fafc; --card: #ffffff;
+            --text: #1e293b; --text-light: #64748b; --border: #e2e8f0; --success: #16a34a; --danger: #dc2626;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 20px; }
+        .container { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
+        @media (max-width: 900px) { .container { grid-template-columns: 1fr; } .ad-sidebar { display: none; } }
+        header { grid-column: 1 / -1; text-align: center; padding: 15px 0; }
+        header h1 { color: var(--primary); font-size: 2.2rem; margin-bottom: 5px; }
+        .main-card { background: var(--card); border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid var(--border); }
+        .settings-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; background: #f1f5f9; padding: 15px; border-radius: 8px; }
+        .form-group { display: flex; flex-direction: column; }
+        label { margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; }
+        input, select { padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; background: white; }
+
+        .shifts-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .day-row { display: grid; grid-template-columns: 150px 1fr 1fr 100px 50px; gap: 10px; align-items: center; padding: 12px; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+        @media (max-width: 650px) {
+            .day-row { grid-template-columns: 1fr 1fr; } .day-select-wrapper { grid-column: 1 / -1; } .btn-remove { grid-column: 1 / -1; text-align: right; width: 100%; }
+        }
+
+        .btn-add { background: #f1f5f9; color: var(--primary); border: 2px dashed var(--primary); padding: 12px; font-weight: 600; border-radius: 8px; cursor: pointer; text-align: center; margin-bottom: 25px; width: 100%; }
+        .btn-remove { background: none; border: none; color: var(--danger); font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        .btn-calc { width: 100%; background-color: var(--primary); color: white; border: none; padding: 14px; font-size: 1.1rem; font-weight: 600; border-radius: 8px; cursor: pointer; }
+
+        .results-grid { margin-top: 30px; display: none; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 600px) { .results-grid { grid-template-columns: 1fr; } }
+        .res-block { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 15px; }
+        .res-block h3 { color: var(--primary); margin-bottom: 10px; font-size: 1.1rem; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        .res-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #cbd5e1; font-size: 0.95rem; }
+
+        .ad-space { background: #e2e8f0; border: 2px dashed #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; }
+        .ad-top { grid-column: 1 / -1; height: 90px; margin-bottom: 10px; }
+        .ad-sidebar { height: 600px; background: #e2e8f0; }
+        .ad-bottom { margin-top: 25px; height: 100px; }
+
+        .note-box { background: #fff7ed; border: 1px solid #fdba74; border-radius: 8px; padding: 15px; margin-bottom: 20px; font-size: 0.9rem; color: #7c2d12; text-align: left; }
+
+        footer { grid-column: 1 / -1; text-align: center; padding: 30px 0; color: var(--text-light); font-size: 0.9rem; }
+        footer a { color: var(--primary); text-decoration: none; margin: 0 10px; font-weight: 600; cursor: pointer; }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; max-width: 600px; width: 100%; position: relative; }
+        .close-modal { position: absolute; top: 15px; right: 20px; font-size: 1.4rem; font-weight: bold; cursor: pointer; border: none; background: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="ad-space ad-top">Advertisement Space (Top 728x90)</div>
+        <header>
+            <h1>12 Hour Shift Calculator for Nurses</h1>
+            <p>Estimate weekly pay for 3x12 or 4x12 rotating shift schedules, including overtime.</p>
+        </header>
+
+        <main class="main-card">
+            <div class="note-box">
+                <strong>Note:</strong> This tool calculates overtime using the standard weekly 40-hour threshold used under federal law (FLSA). It does not automatically add night shift differential — see the FAQ below for how to factor that in. If you work in California, daily overtime rules differ; use our <a href="california-overtime-calculator.html" style="color:inherit; text-decoration: underline;">California Overtime Calculator</a> instead.
+            </div>
+            <form id="calcForm">
+                <div class="settings-row">
+                    <div class="form-group">
+                        <label for="hourlyRate">Base Hourly Rate ($)</label>
+                        <input type="number" id="hourlyRate" min="0" step="0.01" value="35.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="otThreshold">Overtime Threshold (Hours/Week)</label>
+                        <input type="number" id="otThreshold" min="0" value="40">
+                    </div>
+                </div>
+                <div id="shiftsContainer" class="shifts-container"></div>
+                <div id="addShiftBtn" class="btn-add">+ Add Shift</div>
+                <button type="submit" class="btn-calc">Calculate Weekly Earnings</button>
+            </form>
+
+            <div id="resultsGrid" class="results-grid">
+                <div class="res-block">
+                    <h3>Hours & Pay Breakdown</h3>
+                    <div class="res-row"><span>Regular Hours:</span><span id="regHours">0.0 hrs</span></div>
+                    <div class="res-row"><span>Overtime Hours (1.5x):</span><span id="otHours">0.0 hrs</span></div>
+                    <div class="res-row"><span>Total Net Hours:</span><span id="totalNetHours">0.0 hrs</span></div>
+                    <div class="res-row"><span>Total Unpaid Breaks:</span><span id="totalBreaks">0 mins</span></div>
+                    <div class="res-row" style="font-weight:bold; color:var(--success);"><span>Gross Weekly Pay:</span><span id="weeklyPay">$0.00</span></div>
+                </div>
+                <div class="res-block">
+                    <h3>Income Projections (Before Tax)</h3>
+                    <div class="res-row"><span>Weekly Income:</span><span id="projWeek">$0.00</span></div>
+                    <div class="res-row"><span>Bi-Weekly Income:</span><span id="projBiWeek">$0.00</span></div>
+                    <div class="res-row"><span>Monthly Estimate:</span><span id="projMonth">$0.00</span></div>
+                    <div class="res-row" style="font-weight:bold; color:var(--primary);"><span>Annual Estimate:</span><span id="projYear">$0.00</span></div>
+                </div>
+            </div>
+            <div class="ad-space ad-bottom">Advertisement Space (Below Results)</div>
+        </main>
+        <aside class="ad-space ad-sidebar">Advertisement Space (Sidebar 300x600)</aside>
+
+        <div style="grid-column: 1 / -1; margin-top: 30px; text-align: left; width: 100%;">
+            <div class="main-card" style="text-align: left;">
+
+              <section style="margin-bottom: 40px; text-align: left;">
+                <h2 style="font-size: 1.6rem; color: var(--primary); margin-bottom: 15px; font-weight: 600; text-align: left;">Calculating Pay for 12-Hour Nursing Shifts</h2>
+                <p style="margin-bottom: 15px; color: var(--text); text-align: left;">Many nurses work rotating <strong>3x12</strong> (three 12-hour shifts) or <strong>4x12</strong> (four 12-hour shifts) schedules instead of a standard five-day week. This makes it easy to lose track of exactly when overtime kicks in, especially with rotating days off, night shifts, and shift differentials layered on top.</p>
+                <p style="margin-bottom: 15px; color: var(--text); text-align: left;">Under federal law (FLSA), overtime for most hourly nurses is based on a <strong>40-hour workweek</strong>, not a daily threshold. That means:</p>
+                <ul style="margin-left: 20px; padding-left: 0; margin-bottom: 15px; color: var(--text); text-align: left;">
+                  <li style="margin-bottom: 8px; text-align: left;">A <strong>3x12 schedule</strong> (36 hours/week) typically does not trigger overtime on its own.</li>
+                  <li style="margin-bottom: 8px; text-align: left;">A <strong>4x12 schedule</strong> (48 hours/week) puts 8 hours into overtime territory at 1.5x pay.</li>
+                  <li style="margin-bottom: 8px; text-align: left;">Picking up an extra shift on top of your regular rotation can push you into overtime even in a "normal" week.</li>
+                </ul>
+                <p style="margin-bottom: 15px; color: var(--text); text-align: left;">Use the calculator above to log each shift's start and end time (plus any unpaid meal break) and see your total regular hours, overtime hours, and projected gross pay.</p>
+              </section>
+
+              <section style="background-color: #f1f5f9; border-radius: 8px; padding: 20px; border: 1px solid var(--border); text-align: left;">
+                <h2 style="font-size: 1.6rem; color: var(--text); margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 10px; font-weight: 600; text-align: left;">Frequently Asked Questions (FAQ)</h2>
+
+                <div style="margin-bottom: 20px; text-align: left;">
+                  <h3 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 6px; font-weight: 600; text-align: left;">1. How many 12-hour shifts trigger overtime?</h3>
+                  <p style="margin: 0; color: var(--text-light); font-size: 0.95rem; text-align: left;">Under the standard federal 40-hour rule, your fourth 12-hour shift in a single workweek pushes you 8 hours into overtime (48 total hours - 40 = 8 hours at 1.5x pay). Three 12-hour shifts (36 hours) stay under the threshold.</p>
+                </div>
+
+                <div style="margin-bottom: 20px; text-align: left;">
+                  <h3 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 6px; font-weight: 600; text-align: left;">2. Does this calculator include night shift differential?</h3>
+                  <p style="margin: 0; color: var(--text-light); font-size: 0.95rem; text-align: left;">Not automatically, since differential amounts vary a lot by employer and are often a flat dollar add-on or a percentage rather than a fixed rule. To approximate it, add your differential to your Base Hourly Rate before calculating (e.g., $35/hr base + $3/hr night differential = enter $38).</p>
+                </div>
+
+                <div style="margin-bottom: 20px; text-align: left;">
+                  <h3 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 6px; font-weight: 600; text-align: left;">3. Is overtime calculated differently for nurses in California?</h3>
+                  <p style="margin: 0; color: var(--text-light); font-size: 0.95rem; text-align: left;">Yes. California adds daily overtime rules (1.5x after 8 hours in a single day, 2x after 12 hours) on top of the weekly 40-hour rule, which affects 12-hour shifts differently than the federal standard used here. Use our <a href="california-overtime-calculator.html">California Overtime Calculator</a> for that.</p>
+                </div>
+
+                <div style="margin-bottom: 5px; text-align: left;">
+                  <h3 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 6px; font-weight: 600; text-align: left;">4. Does this timesheet calculator save my personal data?</h3>
+                  <p style="margin: 0; color: var(--text-light); font-size: 0.95rem; text-align: left;">No. All calculations and inputs are processed locally within your own web browser. We do not store, collect, or share your work hours or financial information on external servers.</p>
+                </div>
+              </section>
+
+              <p style="margin-top: 20px; font-size: 0.85rem; color: var(--text-light); text-align: left;">This page is for general information only and is not legal or payroll advice. Overtime rules can vary by state and employer contract — check with your HR department or your state's labor office for specifics.</p>
+
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 MyShiftCalculator.com. All rights reserved.</p>
+            <p style="margin-top: 10px;"><a href="index.html">Home</a> | <a href="california-overtime-calculator.html">CA Overtime Calculator</a> | <a id="openPrivacy">Privacy Policy</a> | <a id="openTerms">Terms of Service</a></p>
+        </footer>
+    </div>
+
+    <div id="privacyModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModals()">✕</button>
+            <h2>Privacy Policy</h2>
+            <p>Calculations are processed locally by your browser. We do not store or collect your work hours.</p>
+            <p>We use Google AdSense to serve ads. Google uses cookies to display relevant ads based on user visits.</p>
+        </div>
+    </div>
+
+    <div id="termsModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModals()">✕</button>
+            <h2>Terms of Service</h2>
+            <p>This free tool provides estimations. We do not guarantee payroll or financial precision.</p>
+            <p>We are not responsible for any payroll disputes resulting from the use of this calculator.</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
